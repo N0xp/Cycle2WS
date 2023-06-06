@@ -16,7 +16,7 @@
 #include <vmxpi_ros_bringup/MotorSpeedConfig.h>
 #include <vmxpi_ros/Float.h>
 #include <cmath>
-#include <tf/transform_broadcaster.h>
+// #include <tf/transform_broadcaster.h>
 #include <nav_msgs/Odometry.h>
 
 static double motor1_speed,motor0_speed,motor2_speed;
@@ -28,6 +28,7 @@ static double odom_x,odom_y,odom_z;
 static double left_count, right_count, back_count;
 static double displacey,displacex,magnitude_t,angle,angle_t;
 static double PI = 3.14159265;
+static double diff_x,diff_y,threshold = 0.1;
 void angleCallback(const std_msgs::Float32::ConstPtr& msg)
 {
     angle = abs(msg->data);
@@ -104,10 +105,11 @@ class odom_sub_node
       ros::Subscriber  angle_sub, yawAngle_sub;
       ros::Subscriber enc1_sub,enc0_sub,enc2_sub;
       ros::Subscriber odom_cordi;
-     ros::Publisher displacex_pub, displacey_pub, magnitude_pub, lmotor_PID_pub, rmotor_PID_pub, bmotor_PID_pub, error_pub;
-    
+     ros::Publisher displacex_pub, displacey_pub, magnitude_pub, lmotor_PID_pub, rmotor_PID_pub, bmotor_PID_pub, error_pub ;
+          ros::Publisher odom_pub;
+    //   tf::TransformBroadcaster odom_broadcaster;
       vmxpi_ros::MotorSpeed speed_msg;
-  
+  ros::Time current_time, last_time;
          double tau = 0.02, T = 0.02;
     //double tolerance = 1.0; // Tolerance of Encoder distances(mm) and angle(deg)
          double kP, kI, kD, error;
@@ -129,7 +131,7 @@ class odom_sub_node
          encoder1_dis = nh->subscribe("titan/encoder1/distance",1,encoder1_dis_callback);
          encoder0_dis = nh->subscribe("titan/encoder0/distance",1,encoder0_dis_callback);
          encoder2_dis = nh->subscribe("titan/encoder2/distance",1,encoder2_dis_callback);
-
+        //  odom_pub = nh->advertise<nav_msgs::Odometry>("odom/drivebase",50);
         // enc0_sub = nh->subscribe("titan/encoder0/count", 1, enc0Callback);
         // enc1_sub = nh->subscribe("titan/encoder1/count", 1, enc1Callback);
         // enc2_sub = nh->subscribe("titan/encoder2/count", 1, enc2Callback);
@@ -347,6 +349,7 @@ class odom_sub_node
         ros::Rate loop_rate(50);
         while (ros::ok())
         {
+
             holonomicDrive(0.0, 0.0, 0.0); //Check step to zero the motors
 
             if (flag == true)
@@ -383,6 +386,40 @@ class odom_sub_node
                 flag = true;
                 break;
             }
+    //         geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(angle);
+    //         geometry_msgs::TransformStamped odom_trans;
+    //      odom_trans.header.stamp = current_time;
+    //       odom_trans.header.frame_id = "odom";
+    //      odom_trans.child_frame_id = "base_link";
+
+    //      odom_trans.transform.translation.x = displacex;
+    //      odom_trans.transform.translation.y = displacey;
+    //     odom_trans.transform.translation.z = 0.0;
+    //      odom_trans.transform.rotation = odom_quat;
+    //          //send the transform
+    // odom_broadcaster.sendTransform(odom_trans);
+
+    // //next, we'll publish the odometry message over ROS
+    // nav_msgs::Odometry odom;
+    // odom.header.stamp = current_time;
+    // odom.header.frame_id = "odom";
+
+    // //set the position
+    // odom.pose.pose.position.x = displacex;
+    // odom.pose.pose.position.y = displacey;
+    // odom.pose.pose.position.z = 0.0;
+    // odom.pose.pose.orientation = odom_quat;
+
+    // //set the velocity
+    // odom.child_frame_id = "base_link";
+    // odom.twist.twist.linear.x = teleoperated_forward;
+    // odom.twist.twist.linear.y = teleoperated_side;
+    // odom.twist.twist.angular.z = teleoperated_rotat;
+
+    // //publish the message
+    // odom_pub.publish(odom);
+
+    // last_time = current_time;
 
             ros::spinOnce();
             loop_rate.sleep();
@@ -421,7 +458,11 @@ void drive_odom_msg()
             motorcontorl();
             encoder2dist();
            PubDisplacements();
-            if (magnitude_t >= abs(magnitude))
+            diff_x = odom_x + displacex;
+            diff_y = odom_y + displacey;
+            ROS_INFO("diff_x = %f // diff_y = %f",diff_x,diff_y);
+            ROS_INFO("odom_x = %f // odom_y = %f",odom_x,odom_y);
+            if (abs(diff_x)<=threshold && abs(diff_y)<=threshold)
             {
                 displacex = 0;
                 displacey = 0;
@@ -430,7 +471,42 @@ void drive_odom_msg()
                 reset();
                 flag = true;
                 break;
-            }   
+            }  
+    //         geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(angle);
+    //         geometry_msgs::TransformStamped odom_trans;
+    //      odom_trans.header.stamp = current_time;
+    //       odom_trans.header.frame_id = "odom";
+    //      odom_trans.child_frame_id = "base_link";
+
+    //      odom_trans.transform.translation.x = displacex;
+    //      odom_trans.transform.translation.y = displacey;
+    //     odom_trans.transform.translation.z = 0.0;
+    //      odom_trans.transform.rotation = odom_quat;
+    //          //send the transform
+    // odom_broadcaster.sendTransform(odom_trans);
+
+    // //next, we'll publish the odometry message over ROS
+    // nav_msgs::Odometry odom;
+    // odom.header.stamp = current_time;
+    // odom.header.frame_id = "odom";
+
+    // //set the position
+    // odom.pose.pose.position.x = displacex;
+    // odom.pose.pose.position.y = displacey;
+    // odom.pose.pose.position.z = 0.0;
+    // odom.pose.pose.orientation = odom_quat;
+
+    // //set the velocity
+    // odom.child_frame_id = "base_link";
+    // odom.twist.twist.linear.x = rightSpeed;
+    // odom.twist.twist.linear.y = leftSpeed;
+    // odom.twist.twist.angular.z = backSpeed;
+
+    // //publish the message
+    // odom_pub.publish(odom);
+
+    last_time = current_time;
+ 
               ros::spinOnce();
             loop_rate.sleep();
         }
@@ -450,6 +526,7 @@ void callback(vmxpi_ros_bringup::MotorSpeedConfig &config, uint32_t level) {
         {
              reset();
              drive_odom_msg();
+             ros::Duration(1.5).sleep();
             //  setMovements(1.0, 0.0); // (magnitude (m), angle (deg))
             //  ros::Duration(1.5).sleep(); // sleep for 1 second
              
@@ -473,6 +550,7 @@ int main(int argc, char **argv)
    ros::init(argc, argv, "drive_enc_node");
 
    ros::NodeHandle nh; //internal reference to the ROS node that the program will use to interact with the ROS system
+   
    VMXPi vmx(true, (uint8_t)50); //realtime bool and the update rate to use for the VMXPi AHRS/IMU interface, default is 50hz within a valid range of 4-200Hz
    ros::AsyncSpinner spinner(4);
    spinner.start();

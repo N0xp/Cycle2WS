@@ -34,8 +34,8 @@ class odom_pub
         {
         nav_msgs::Odometry odom;
         odom.header.frame_id = "odom";
-        odom.pose.pose.position.x =100;
-        odom.pose.pose.position.y =1000;
+        odom.pose.pose.position.x =1;
+        odom.pose.pose.position.y =1;
         odom.pose.pose.position.z =0;
 
         odome_msge.publish(odom);
