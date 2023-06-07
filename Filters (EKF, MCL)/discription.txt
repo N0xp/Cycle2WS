@@ -1,0 +1,2 @@
+git clone https://github.com/ros-planning/robot_pose_ekf.git src/robot_pose_ekf
+rosdep install --from-paths src --ignore-src --rosdistro <YOUR_ROS_DISTRO> -y
